@@ -11,13 +11,13 @@ class User(Base):
 
     tasks = relationship("Task", back_populates="owner")
 
-    class Task(Base):
-        __tablename__ = "tasks"
-        id = Column(Integer, primary_key=True, index=True)
-        title = Column(String, nullable=False)
-        status = Column(String, default="pending")
-        priority = Column(String, default="medium")
+class Task(Base):
+    __tablename__ = "tasks"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    status = Column(String, default="pending")
+    priority = Column(String, default="medium")
 
-        owner_id = Column(Integer, ForeignKey("users.id"))
-        
-        owner = relationship("User", back_populates="tasks")
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    
+    owner = relationship("User", back_populates="tasks")
