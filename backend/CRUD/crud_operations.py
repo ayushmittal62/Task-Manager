@@ -1,12 +1,21 @@
 from backend.db import models
 from sqlalchemy.orm import Session
+from backend.jwt_auth import get_password_hash, verify_password
 
 def create_user(db: Session, username:str , password: str, role: str = "user"):
-    db_user = models.User(username=username, password=password, role=role)
+    db_user = models.User(username=username, hashed_password=get_password_hash(password), role=role)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
+def authenticate_user(db: Session, username: str, password: str):
+    user = get_user_by_username(db, username)
+    if not user:
+        return False
+    if not verify_password(password, user.hashed_password):
+        return False
+    return user
 
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
