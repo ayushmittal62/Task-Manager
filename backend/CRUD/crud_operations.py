@@ -20,8 +20,8 @@ def authenticate_user(db: Session, username: str, password: str):
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
-def create_task(db: Session, title: str, priority: str, user_id: int):
-    db_task = models.Task(title=title, priority=priority, owner_id=user_id)
+def create_task(db: Session, title: str, priority: str, user_id: int, status: str = "pending"):
+    db_task = models.Task(title=title, priority=priority, status=status, owner_id=user_id)
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -65,4 +65,20 @@ def delete_task_admin_only(db: Session, task_id: int, user):
     db.delete(task)
     db.commit()
     return task
+
+def get_all_users(db: Session):
+    """Get all users (admin only)"""
+    return db.query(models.User).all()
+
+def get_user_by_id(db: Session, user_id: int):
+    """Get user by ID"""
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+def delete_user(db: Session, user_id: int):
+    """Delete user by ID"""
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if db_user:
+        db.delete(db_user)
+        db.commit()
+    return db_user
 

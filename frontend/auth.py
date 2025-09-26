@@ -1,5 +1,5 @@
 import streamlit as st
-import frontend.api as api
+from api import api
 
 def initialize_session_state():
     if "authenticated" not in st.session_state:

@@ -68,7 +68,7 @@ def login_for_access_token(user_login: schemas.UserLogin, db: Session = Depends(
 
 # ===== USER ENDPOINTS =====
 
-@app.post("/users/", response_model=schemas.UserResponse)
+@app.post("/users/", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     """Register a new user"""
     db_user = crud.get_user_by_username(db, username=user.username)
@@ -96,16 +96,47 @@ def read_user(
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
+@app.get("/users/", response_model=list[schemas.UserResponse])
+def read_all_users(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Get all users (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    return crud.get_all_users(db=db)
+
+@app.delete("/users/{user_id}")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Delete user by ID (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    if current_user.id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    
+    db_user = crud.get_user_by_id(db=db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    crud.delete_user(db=db, user_id=user_id)
+    return {"message": f"User {db_user.username} deleted successfully"}
+
 # ===== TASK ENDPOINTS (ALL NOW REQUIRE AUTHENTICATION) =====
 
-@app.post("/tasks/", response_model=schemas.TaskResponse)
+@app.post("/tasks/", response_model=schemas.TaskResponse, status_code=status.HTTP_201_CREATED)
 def create_task(
     task: schemas.TaskCreate, 
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     """Create a new task"""
-    return crud.create_task(db, task.title, task.priority, current_user.id)
+    return crud.create_task(db, task.title, task.priority, current_user.id, task.status)
 
 @app.get("/tasks/", response_model=list[schemas.TaskResponse])
 def read_tasks(
